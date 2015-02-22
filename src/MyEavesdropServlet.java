@@ -33,8 +33,7 @@ public class MyEavesdropServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException
-	{
+			throws ServletException, IOException {
 		String value = request.getParameter("param1");
 		response.getWriter().println("Param:param1" + " Value:" + value);
 
@@ -75,8 +74,7 @@ public class MyEavesdropServlet extends HttpServlet {
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException
-	{
+			throws ServletException, IOException {
 		if (request.getParameter("username") != null &&
 				request.getParameter("password") != null) {
 			Cookie cookie = new Cookie("logged_in", "me");
@@ -101,11 +99,11 @@ public class MyEavesdropServlet extends HttpServlet {
 		FileOutputStream f = new FileOutputStream(filename);
 		PrintWriter pw = new PrintWriter(f);
 		Cookie cookies[] = request.getCookies();
-		for(int i=0; i<cookies.length; i++) {
+		for (int i = 0; i < cookies.length; i++) {
 			if (cookies[i].getName().equals("logged_in")) {
 				Iterator it = userData.entrySet().iterator();
-				while(it.hasNext()) {
-					Map.Entry<String, String> entry = (Map.Entry<String, String>)it.next();
+				while (it.hasNext()) {
+					Map.Entry<String, String> entry = (Map.Entry<String, String>) it.next();
 					String x = entry.getKey() + ":" + entry.getValue();
 					pw.println(x);
 				}
