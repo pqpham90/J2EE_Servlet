@@ -4,15 +4,14 @@
          xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
 
-    <display-name>My Eavesdrop Servlet</display-name>
+    <display-name>My Eavesdrop Servelet</display-name>
 
     <servlet>
-        <servlet-name>My-Eavesdrop-Servlet</servlet-name>
+        <servlet-name>my-eavesdrop-servlet</servlet-name>
         <servlet-class>MyEavesdropServlet</servlet-class>
     </servlet>
     <servlet-mapping>
-        <servlet-name>My-Eavesdrop-Servlet</servlet-name>
+        <servlet-name>my-eavesdrop-servlet</servlet-name>
         <url-pattern>/myeavesdrop</url-pattern>
     </servlet-mapping>
-
 </web-app>
