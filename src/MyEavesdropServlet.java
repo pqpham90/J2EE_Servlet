@@ -9,12 +9,9 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URLDecoder;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Map;
 
@@ -35,32 +32,27 @@ public class MyEavesdropServlet extends HttpServlet {
 		loggedInUsers = new HashMap<String, String>();
 	}
 
-	@Override
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		Cookie cookies[] = request.getCookies();
-		boolean friend = false;
-		for (int i = 0; cookies != null && i < cookies.length; i++) {
-			Cookie ck = cookies[i];
-			String cookieName = ck.getName();
-			String cookieValue = ck.getValue();
-			if ((cookieName != null && cookieName.equals("not-a-stranger-anymore"))
-					&& cookieValue != null && cookieValue.equals("friend")) {
-				response.getWriter().println("Hello, friend.");
-				response.getWriter().println("Domain:" + ck.getDomain());
-				response.getWriter().println("Path:" + ck.getPath());
-				friend = true;
-			}
-		}
-		if (!friend) {
-			Cookie cookie = new Cookie("not-a-stranger-anymore", "friend");
-			cookie.setDomain("localhost");
-			cookie.setPath("/assignment2" + request.getServletPath());
+	public void startSession(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String username = request.getParameter("username");
+
+		if (username != null) {
+			Cookie cookie = new Cookie("logged_in", username);
 			cookie.setMaxAge(1000);
 			response.addCookie(cookie);
-			response.getWriter().println("Hello, stranger.");
 		}
+	}
 
+	public void endSession(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String username = request.getParameter("username");
+
+		if (username != null) {
+			Cookie cookie = new Cookie("logged_in", username);
+			cookie.setMaxAge(0);
+			response.addCookie(cookie);
+		}
+	}
+
+	public void printData(HttpServletResponse response) throws IOException {
 		response.getWriter().println("Hello world.");
 		try {
 			String source = "http://eavesdrop.openstack.org/irclogs/%23heat/";
@@ -69,7 +61,7 @@ public class MyEavesdropServlet extends HttpServlet {
 
 			ListIterator<Element> iter = links.listIterator();
 			while(iter.hasNext()) {
-				Element e = (Element) iter.next();
+				Element e = iter.next();
 				String s = e.html();
 				s = s.replace("#", "%23");
 				response.getWriter().println(source + s);
@@ -77,7 +69,9 @@ public class MyEavesdropServlet extends HttpServlet {
 		} catch (Exception exp) {
 			exp.printStackTrace();
 		}
+	}
 
+	public void processQuery(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String value = request.getParameter("param1");
 		response.getWriter().println("Param:param1" + " Value:" + value);
 
@@ -116,45 +110,49 @@ public class MyEavesdropServlet extends HttpServlet {
 	}
 
 	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		if (request.getParameter("username") != null &&
-				request.getParameter("password") != null) {
-			Cookie cookie = new Cookie("logged_in", "me");
-			cookie.setMaxAge(1000);
-			response.addCookie(cookie);
 
-			response.getWriter().println("<html>");
-			response.getWriter().println("<br>Welcom, " + request.getParameter("username"));
-			response.getWriter().println("<form action=\"/qp/queryparam\" method=\"post\">");
-			response.getWriter().println("<input type=\"text\" name=\"type\">");
-			response.getWriter().println("<input type=\"text\" name=\"project\">");
-			response.getWriter().println("<input type=\"text\" name=\"year\">");
-			response.getWriter().println("<input type=\"submit\"></input>");
-			response.getWriter().println("</form>");
-			response.getWriter().println("</html>");
-			return;
-		}
+		String sessionFlag = request.getParameter("session");
 
-		String filename = getServletContext().getRealPath("/WEB-INF/userData.txt");
-		System.out.println("FileName:" + filename);
+		Cookie[] cookies = request.getCookies();
 
-		FileOutputStream f = new FileOutputStream(filename);
-		PrintWriter pw = new PrintWriter(f);
-		Cookie cookies[] = request.getCookies();
-		for (int i = 0; i < cookies.length; i++) {
-			if (cookies[i].getName().equals("logged_in")) {
-				Iterator it = userData.entrySet().iterator();
-				while (it.hasNext()) {
-					Map.Entry<String, String> entry = (Map.Entry<String, String>) it.next();
-					String x = entry.getKey() + ":" + entry.getValue();
-					pw.println(x);
+		if(sessionFlag != null) {
+			if (sessionFlag.compareTo("start") == 0) {
+				if (cookies == null) {
+					startSession(request, response);
+				}
+				else {
+					response.getWriter().print("Please end the current session with user: ");
+					response.getWriter().println(cookies[0].getValue());
 				}
 			}
-			pw.flush();
-			pw.close();
-			f.flush();
-			f.close();
+			else if (sessionFlag.compareTo("end") == 0) {
+				if (cookies != null) {
+					if(request.getParameter("username").compareTo(cookies[0].getValue()) == 0) {
+						endSession(request, response);
+					}
+					else {
+						response.getWriter().print("Wrong user, current session is with: ");
+						response.getWriter().println(cookies[0].getValue());
+					}
+				}
+				else {
+					response.getWriter().println("Protip: you should start a session to end one");
+				}
+			}
 		}
+//		printData(response);
+		processQuery(request, response);
+
+		response.getWriter().println("Yatta!");
+		response.getWriter().println(request.getParameter("username"));
+		response.getWriter().println(request.getParameter("password"));
+		response.getWriter().println(request.getParameter("session"));
+	}
+
+	@Override
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 	}
 }
