@@ -29,6 +29,7 @@ public class MyEavesdropServlet extends HttpServlet {
 						Cookie cookie = new Cookie("logged_in", username);
 						cookie.setMaxAge(1000);
 						response.addCookie(cookie);
+						response.getWriter().println("Starting session for: " + username);
 					}
 				}
 				else {
@@ -43,6 +44,7 @@ public class MyEavesdropServlet extends HttpServlet {
 							Cookie cookie = new Cookie("logged_in", username);
 							cookie.setMaxAge(0);
 							response.addCookie(cookie);
+							response.getWriter().println("Ending session for: " + username);
 						}
 					}
 					else {
@@ -116,15 +118,21 @@ public class MyEavesdropServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
+		String session = request.getParameter("session");
 		Cookie[] cookies = request.getCookies();
 
+		manageSession(request, response);
+
 		if (cookies != null) {
-			manageSession(request, response);
-			printData(response);
-			processQuery(request, response);
+			if (session != null && session.compareTo("end") != 0) {
+				printData(response);
+				processQuery(request, response);
+			}
 		}
 		else {
-			response.getWriter().println("Please start a user session");
+			if (session != null && session.compareTo("start") != 0) {
+				response.getWriter().println("Please start a user session");
+			}
 		}
 	}
 
