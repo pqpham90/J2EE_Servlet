@@ -29,33 +29,53 @@ public class MyEavesdropServlet extends HttpServlet {
 						Cookie cookie = new Cookie("logged_in", username);
 						cookie.setMaxAge(1000);
 						response.addCookie(cookie);
-						response.getWriter().println("Starting session for: " + username);
+						response.getWriter().println("Starting session for: " + username + "\n");
+					}
+					else {
+						response.getWriter().println("Please provide a username to start the session");
 					}
 				}
 				else {
 					response.getWriter().print("Please end the current session with user: ");
-					response.getWriter().println(cookies[0].getValue());
+					response.getWriter().println(cookies[0].getValue() + "\n");
 				}
 			}
 			else if (sessionFlag.compareTo("end") == 0) {
 				if (cookies != null) {
-					if(request.getParameter("username").compareTo(cookies[0].getValue()) == 0) {
-						if (username != null) {
+					if(username != null) {
+						if (request.getParameter("username").compareTo(cookies[0].getValue()) == 0) {
 							Cookie cookie = new Cookie("logged_in", username);
 							cookie.setMaxAge(0);
 							response.addCookie(cookie);
-							response.getWriter().println("Ending session for: " + username);
+							response.getWriter().println("Ending session for: " + username + "\n");
+						}
+						else {
+							response.getWriter().print("Wrong user, current session is with: ");
+							response.getWriter().println(cookies[0].getValue() + "\n");
 						}
 					}
 					else {
-						response.getWriter().print("Wrong user, current session is with: ");
-						response.getWriter().println(cookies[0].getValue());
+						response.getWriter().print("Please end session with username: ");
+						response.getWriter().println(cookies[0].getValue() + "\n");
 					}
 				}
 				else {
 					response.getWriter().println("Protip: you should start a session to end one");
 				}
 			}
+			else {
+				response.getWriter().print("Invalid value for session, ");
+
+				if(cookies == null) {
+					response.getWriter().println("did you mean to start?");
+				}
+				else {
+					response.getWriter().println("did you mean to end?");
+				}
+			}
+		}
+		else if (cookies == null) {
+			response.getWriter().println("Please start a session");
 		}
 	}
 
@@ -79,8 +99,14 @@ public class MyEavesdropServlet extends HttpServlet {
 	}
 
 	public void processQuery(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		String value = request.getParameter("param1");
-		response.getWriter().println("Param:param1" + " Value:" + value);
+		String type = request.getParameter("type");
+		String project = request.getParameter("project");
+		String year = request.getParameter("year");
+
+
+		response.getWriter().println("Param type: " + type);
+		response.getWriter().println("Param project: " + project);
+		response.getWriter().println("Param year: " + year);
 
 		System.out.println("");
 
@@ -124,15 +150,7 @@ public class MyEavesdropServlet extends HttpServlet {
 		manageSession(request, response);
 
 		if (cookies != null) {
-			if (session != null && session.compareTo("end") != 0) {
-				printData(response);
-				processQuery(request, response);
-			}
-		}
-		else {
-			if (session != null && session.compareTo("start") != 0) {
-				response.getWriter().println("Please start a user session");
-			}
+			processQuery(request, response);
 		}
 	}
 
