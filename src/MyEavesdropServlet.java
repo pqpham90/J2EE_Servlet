@@ -3,7 +3,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
@@ -11,44 +10,50 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.HashMap;
 import java.util.ListIterator;
-import java.util.Map;
 
 public class MyEavesdropServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
 
-	Map<String, String> userData;
-	Map<String, String> loggedInUsers;
-
-	public MyEavesdropServlet() {
-		super();
-	}
-
-	@Override
-	public void init(ServletConfig config) {
-		userData = new HashMap<String, String>();
-		loggedInUsers = new HashMap<String, String>();
-	}
-
-	public void startSession(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	public void manageSession (HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String sessionFlag = request.getParameter("session");
 		String username = request.getParameter("username");
 
-		if (username != null) {
-			Cookie cookie = new Cookie("logged_in", username);
-			cookie.setMaxAge(1000);
-			response.addCookie(cookie);
-		}
-	}
+		Cookie[] cookies = request.getCookies();
 
-	public void endSession(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		String username = request.getParameter("username");
-
-		if (username != null) {
-			Cookie cookie = new Cookie("logged_in", username);
-			cookie.setMaxAge(0);
-			response.addCookie(cookie);
+		if(sessionFlag != null) {
+			if (sessionFlag.compareTo("start") == 0) {
+				if (cookies == null) {
+					if (username != null) {
+						Cookie cookie = new Cookie("logged_in", username);
+						cookie.setMaxAge(1000);
+						response.addCookie(cookie);
+					}
+				}
+				else {
+					response.getWriter().print("Please end the current session with user: ");
+					response.getWriter().println(cookies[0].getValue());
+				}
+			}
+			else if (sessionFlag.compareTo("end") == 0) {
+				if (cookies != null) {
+					if(request.getParameter("username").compareTo(cookies[0].getValue()) == 0) {
+						if (username != null) {
+							Cookie cookie = new Cookie("logged_in", username);
+							cookie.setMaxAge(0);
+							response.addCookie(cookie);
+						}
+					}
+					else {
+						response.getWriter().print("Wrong user, current session is with: ");
+						response.getWriter().println(cookies[0].getValue());
+					}
+				}
+				else {
+					response.getWriter().println("Protip: you should start a session to end one");
+				}
+			}
 		}
 	}
 
@@ -105,50 +110,22 @@ public class MyEavesdropServlet extends HttpServlet {
 		//response.getWriter().println("<html>");
 		//response.getWriter().println("Hello again.");
 		//response.getWriter().println("</html>");
-
-		userData.put("V1", "V2");
 	}
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
-		String sessionFlag = request.getParameter("session");
-
 		Cookie[] cookies = request.getCookies();
 
-		if(sessionFlag != null) {
-			if (sessionFlag.compareTo("start") == 0) {
-				if (cookies == null) {
-					startSession(request, response);
-				}
-				else {
-					response.getWriter().print("Please end the current session with user: ");
-					response.getWriter().println(cookies[0].getValue());
-				}
-			}
-			else if (sessionFlag.compareTo("end") == 0) {
-				if (cookies != null) {
-					if(request.getParameter("username").compareTo(cookies[0].getValue()) == 0) {
-						endSession(request, response);
-					}
-					else {
-						response.getWriter().print("Wrong user, current session is with: ");
-						response.getWriter().println(cookies[0].getValue());
-					}
-				}
-				else {
-					response.getWriter().println("Protip: you should start a session to end one");
-				}
-			}
+		if (cookies != null) {
+			manageSession(request, response);
+			printData(response);
+			processQuery(request, response);
 		}
-//		printData(response);
-		processQuery(request, response);
-
-		response.getWriter().println("Yatta!");
-		response.getWriter().println(request.getParameter("username"));
-		response.getWriter().println(request.getParameter("password"));
-		response.getWriter().println(request.getParameter("session"));
+		else {
+			response.getWriter().println("Please start a user session");
+		}
 	}
 
 	@Override
