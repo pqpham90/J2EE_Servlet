@@ -26,10 +26,15 @@ public class MyEavesdropServlet extends HttpServlet {
 			if (sessionFlag.compareTo("start") == 0) {
 				if (cookies == null) {
 					if (username != null) {
-						Cookie cookie = new Cookie("logged_in", username);
-						cookie.setMaxAge(1000);
-						response.addCookie(cookie);
-						response.getWriter().println("Starting session for: " + username + "\n");
+						if(username.contains(" ")) {
+							response.getWriter().print("Spaces are not allowed in the username");
+						}
+						else {
+							Cookie cookie = new Cookie("logged_in", username);
+							cookie.setMaxAge(1000);
+							response.addCookie(cookie);
+							response.getWriter().println("Starting session for: " + username + "\n");
+						}
 					}
 					else {
 						response.getWriter().println("Please provide a username to start the session");
@@ -53,13 +58,11 @@ public class MyEavesdropServlet extends HttpServlet {
 							response.getWriter().print("Wrong user, current session is with: ");
 							response.getWriter().println(cookies[0].getValue() + "\n");
 						}
-					}
-					else {
+					} else {
 						response.getWriter().print("Please end session with username: ");
 						response.getWriter().println(cookies[0].getValue() + "\n");
 					}
-				}
-				else {
+				} else {
 					response.getWriter().println("Protip: you should start a session to end one");
 				}
 			}
@@ -79,10 +82,9 @@ public class MyEavesdropServlet extends HttpServlet {
 		}
 	}
 
-	public void printData(HttpServletResponse response) throws IOException {
-		response.getWriter().println("Hello world.");
+	public void printData(HttpServletResponse response, String source) throws IOException {
 		try {
-			String source = "http://eavesdrop.openstack.org/irclogs/%23heat/";
+			source = "http://eavesdrop.openstack.org/irclogs/%23heat/";
 			Document doc = Jsoup.connect(source).get();
 			Elements links = doc.select("body a");
 
@@ -103,6 +105,25 @@ public class MyEavesdropServlet extends HttpServlet {
 		String project = request.getParameter("project");
 		String year = request.getParameter("year");
 
+		String username = request.getParameter("username");
+		String session = request.getParameter("session");
+
+		if (session == null && username == null) {
+			if (type == null || project == null) {
+				response.getWriter().println("Please provide a parameter for type and project\n");
+			}
+			else  {
+				if (type.compareTo("irclogs") == 0) {
+					response.getWriter().println("irc");
+				}
+				else if (type.compareTo("meetings") == 0 && year != null) {
+					response.getWriter().println("meetings");
+				}
+				else {
+					response.getWriter().println("Please provide a year parameter");
+				}
+			}
+		}
 
 		response.getWriter().println("Param type: " + type);
 		response.getWriter().println("Param project: " + project);
@@ -138,6 +159,8 @@ public class MyEavesdropServlet extends HttpServlet {
 		//response.getWriter().println("<html>");
 		//response.getWriter().println("Hello again.");
 		//response.getWriter().println("</html>");
+
+//		printData(response);
 	}
 
 	@Override
@@ -150,6 +173,10 @@ public class MyEavesdropServlet extends HttpServlet {
 		manageSession(request, response);
 
 		if (cookies != null) {
+			if (request.getQueryString() == null) {
+				response.getWriter().println("No query to process\n");
+			}
+
 			processQuery(request, response);
 		}
 	}
